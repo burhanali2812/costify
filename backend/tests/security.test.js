@@ -87,8 +87,8 @@ test('T5a: security headers present, framework banner hidden', async () => {
 test('T5b: CORS refuses unknown origins', async () => {
   const bad = await fetch(`${base}/api/health`, { headers: { origin: 'https://evil.example' } });
   assert.equal(bad.headers.get('access-control-allow-origin'), null);
-  const good = await fetch(`${base}/api/health`, { headers: { origin: 'http://localhost:5173' } });
-  assert.equal(good.headers.get('access-control-allow-origin'), 'http://localhost:5173');
+  const good = await fetch(`${base}/api/health`, { headers: { origin: 'https://costify-eight.vercel.app/' } });
+  assert.equal(good.headers.get('access-control-allow-origin'), 'https://costify-eight.vercel.app/');
 });
 test('T5c: no stored projects, secrets or unlisted routes are reachable', async () => {
   for (const p of ['/api/projects/1', '/api/projects', '/.env', '/api/../.env', '/server.js']) assert.equal((await fetch(`${base}${p}`)).status, 404, p);

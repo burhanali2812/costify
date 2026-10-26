@@ -18,7 +18,7 @@ const ALLOWED_EXT = new Set(['.xlsx', '.csv']);
 const ALLOWED_MIME = new Set(['text/csv', 'application/csv', 'text/plain', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
 
 export function createApp(opts = {}) {
-  const origins = [].concat(opts.corsOrigins ?? process.env.CORS_ORIGIN ?? 'http://localhost:5173')
+  const origins = [].concat(opts.corsOrigins ?? process.env.CORS_ORIGIN ?? 'https://costify-eight.vercel.app/')
     .flatMap((s) => String(s).split(',')).map((s) => s.trim()).filter(Boolean);
   const cfg = {
     generalLimit: opts.generalLimit ?? 120, heavyLimit: opts.heavyLimit ?? 10, maxUploadBytes: opts.maxUploadBytes ?? 2 * 1024 * 1024,
