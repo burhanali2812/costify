@@ -6,7 +6,7 @@ export class UploadError extends Error {
   constructor(message, status = 400) { super(message); this.status = status; }
 }
 
-export const TEMPLATE_CSV = 'Task,BAC,Planned % Complete,Actual % Complete,AC,PERT Optimistic,PERT Most Likely,PERT Pessimistic\nDesign,10000,100,100,9500,9000,10000,12000\nDevelopment,40000,60,50,26000,35000,42000,55000\nTesting,15000,20,10,2500,12000,15000,22000\nDeployment,5000,0,0,0,4000,5000,7000\n';
+export const TEMPLATE_CSV = 'Task,BAC,Planned % Complete,Actual % Complete,AC,Predecessor,Optimistic (days),Most Likely (days),Pessimistic (days)\nRequirements,10000,100,100,9500,,3,5,8\nDevelopment,40000,60,50,26000,Requirements,15,22,32\nTesting,15000,20,10,2500,Development,6,9,14\nDeployment,5000,0,0,0,Testing,2,3,5\n';
 
 const MAX_COLS = 20;
 const SYN = {
@@ -15,9 +15,10 @@ const SYN = {
   plannedPct: ['plannedpercentcomplete', 'plannedcomplete', 'plannedpercentcompleted', 'plannedprogress', 'plannedpercent', 'plannedpct', 'planned'],
   actualPct: ['actualpercentcomplete', 'actualcomplete', 'actualprogress', 'actualpercent', 'actualpct', 'percentcomplete', 'progress'],
   ac: ['ac', 'actualcost', 'actualspend', 'actual', 'spent', 'costtodate'],
-  optimistic: ['optimistic', 'optimisticestimate', 'pertoptimistic'],
-  mostLikely: ['mostlikely', 'mostlikelyestimate', 'likelyestimate', 'pertmostlikely'],
-  pessimistic: ['pessimistic', 'pessimisticestimate', 'pertpessimistic'],
+  predecessor: ['predecessor', 'predecessors', 'dependency', 'dependencies'],
+  optimisticDays: ['optimisticdays', 'optimisticduration', 'pertoptimisticdays'],
+  mostLikelyDays: ['mostlikelydays', 'mostlikelyduration', 'likelydays', 'pertmostlikelydays'],
+  pessimisticDays: ['pessimisticdays', 'pessimisticduration', 'pertpessimisticdays'],
 };
 const RISK_SYN = {
   name: ['risk', 'name', 'description', 'riskname'],
@@ -89,9 +90,9 @@ function toTasks(rows, warnings) {
     const line = i + 2;
     const get = (k) => r[cols[k]] ?? '';
     const bac = parseNumber(get('bac')), pp = parseNumber(get('plannedPct')), ap = parseNumber(get('actualPct')), ac = parseNumber(get('ac'));
-    const optimistic = parseNumber(get('optimistic')), mostLikely = parseNumber(get('mostLikely')), pessimistic = parseNumber(get('pessimistic'));
+    const optimisticDays = parseNumber(get('optimisticDays')), mostLikelyDays = parseNumber(get('mostLikelyDays')), pessimisticDays = parseNumber(get('pessimisticDays'));
     if ([bac, pp, ap, ac].some((x) => Number.isNaN(x.n))) { warnings.push(`Row ${line} skipped: BAC, planned %, actual % and AC must all be numbers.`); return; }
-    parsed.push({ line, name: cleanText(get('name')) || `Task ${i + 1}`, bac: bac.n, pp: pp.n, ap: ap.n, ac: ac.n, optimistic: optimistic.n, mostLikely: mostLikely.n, pessimistic: pessimistic.n, pct: pp.hadPercent || ap.hadPercent });
+    parsed.push({ line, name: cleanText(get('name')) || `Task ${i + 1}`, bac: bac.n, pp: pp.n, ap: ap.n, ac: ac.n, predecessor: cleanText(get('predecessor')), optimisticDays: optimisticDays.n, mostLikelyDays: mostLikelyDays.n, pessimisticDays: pessimisticDays.n, pct: pp.hadPercent || ap.hadPercent });
   });
 
   // Excel stores "45%" as 0.45. If every percent value is <= 1 and none used a % sign, treat as fractions.
@@ -105,10 +106,10 @@ function toTasks(rows, warnings) {
     const pp = fractions ? p.pp * 100 : p.pp, ap = fractions ? p.ap * 100 : p.ap;
     if (p.bac < 0 || p.ac < 0 || pp < 0 || pp > 100 || ap < 0 || ap > 100 || p.bac > LIMITS.maxMoney || p.ac > LIMITS.maxMoney) { warnings.push(`Row ${p.line} skipped: a value is out of range (percent 0–100, money ≥ 0).`); continue; }
     if (/^[=+\-@]/.test(p.name)) warnings.push(`Row ${p.line}: task name starts with a formula character; it is kept as text and neutralised in exports.`);
-    const pert = [p.optimistic, p.mostLikely, p.pessimistic];
+    const pert = [p.optimisticDays, p.mostLikelyDays, p.pessimisticDays];
     const hasPert = pert.some((value) => !Number.isNaN(value));
-    if (hasPert && (pert.some(Number.isNaN) || pert.some((value) => value < 0 || value > LIMITS.maxMoney) || !(pert[0] <= pert[1] && pert[1] <= pert[2]))) { warnings.push(`Row ${p.line} skipped: PERT estimates must be ordered optimistic <= most likely <= pessimistic.`); continue; }
-    tasks.push({ name: p.name, bac: p.bac, plannedPct: pp, actualPct: ap, ac: p.ac, ...(hasPert ? { optimistic: pert[0], mostLikely: pert[1], pessimistic: pert[2] } : {}) });
+    if (hasPert && (pert.some(Number.isNaN) || pert.some((value) => value < 0 || value > LIMITS.maxDays) || !(pert[0] <= pert[1] && pert[1] <= pert[2]))) { warnings.push(`Row ${p.line} skipped: PERT durations must be ordered optimistic <= most likely <= pessimistic.`); continue; }
+    tasks.push({ name: p.name, bac: p.bac, plannedPct: pp, actualPct: ap, ac: p.ac, ...(p.predecessor ? { predecessor: p.predecessor } : {}), ...(hasPert ? { optimisticDays: pert[0], mostLikelyDays: pert[1], pessimisticDays: pert[2] } : {}) });
   }
   if (tasks.length === 0) throw new UploadError('No valid task rows were found in the file.');
   return tasks;

@@ -35,11 +35,15 @@ test('TCPI and EMV', () => {
 
 test('PERT expected cost and uncertainty', () => {
   const pert = computeProject({
-    tasks: [{ name: 'A', bac: 1000, plannedPct: 0, actualPct: 0, ac: 0, optimistic: 800, mostLikely: 1000, pessimistic: 1400 }],
+    tasks: [
+      { name: 'A', bac: 1000, plannedPct: 0, actualPct: 0, ac: 0, predecessor: '', optimisticDays: 2, mostLikelyDays: 4, pessimisticDays: 8 },
+      { name: 'B', bac: 1000, plannedPct: 0, actualPct: 0, ac: 0, predecessor: 'A', optimisticDays: 3, mostLikelyDays: 5, pessimisticDays: 7 },
+    ],
   }).pert;
-  near(pert.expected, 1033.3333, 0.0001);
-  near(pert.standardDeviation, 100, 0.0001);
-  near(pert.variance, 10000, 0.0001);
+  near(pert.rows[0].expectedDuration, 4.3333, 0.0001);
+  near(pert.expectedDuration, 9.3333, 0.0001);
+  near(pert.standardDeviation, Math.sqrt((1 + 4 / 9)), 0.0001);
+  assert.deepEqual(pert.criticalPath, ['A', 'B']);
 });
 
 test('division by zero never produces Infinity or NaN', () => {

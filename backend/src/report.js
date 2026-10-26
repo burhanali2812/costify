@@ -73,9 +73,9 @@ export function buildReportPdf(project, result, analysis, aiSummary = '') {
   ], cur);
 
   if (result.pert?.available) {
-    h2(doc, '4. PERT cost analysis');
-    doc.fillColor(INK).font('Helvetica').fontSize(9).text(`Expected cost: ${cur} ${num(result.pert.expected, 0)}   |   Standard deviation: ${cur} ${num(result.pert.standardDeviation, 0)}   |   Approx. 95% range: ${cur} ${num(result.pert.low95, 0)} to ${cur} ${num(result.pert.high95, 0)}`).moveDown(0.4);
-    table(doc, [{ label: 'Task', w: 145 }, { label: 'Optimistic', w: 75, align: 'right' }, { label: 'Most likely', w: 75, align: 'right' }, { label: 'Pessimistic', w: 75, align: 'right' }, { label: 'Expected', w: 75, align: 'right' }, { label: 'Std. dev.', w: 70, align: 'right' }], result.pert.rows.map((r) => [r.name, num(r.optimistic, 0), num(r.mostLikely, 0), num(r.pessimistic, 0), num(r.expected, 0), num(r.standardDeviation, 0)]));
+    h2(doc, '4. PERT duration analysis');
+    doc.fillColor(INK).font('Helvetica').fontSize(9).text(`Expected duration: ${num(result.pert.expectedDuration, 1)} days   |   Standard deviation: ${num(result.pert.standardDeviation, 1)} days   |   Approx. 95% range: ${num(result.pert.low95, 1)} to ${num(result.pert.high95, 1)} days   |   Critical path: ${result.pert.criticalPath.join(' -> ')}`).moveDown(0.4);
+    table(doc, [{ label: 'Task', w: 105 }, { label: 'Predecessor', w: 90 }, { label: 'Optimistic', w: 65, align: 'right' }, { label: 'Most likely', w: 65, align: 'right' }, { label: 'Pessimistic', w: 65, align: 'right' }, { label: 'Expected', w: 65, align: 'right' }, { label: 'Std. dev.', w: 60, align: 'right' }], result.pert.rows.map((r) => [r.name, r.predecessor, num(r.optimisticDays, 0), num(r.mostLikelyDays, 0), num(r.pessimisticDays, 0), num(r.expectedDuration, 1), num(r.standardDeviation, 1)]));
   }
 
   h2(doc, '5. Tasks');

@@ -71,16 +71,33 @@ export function computeEmv(risks = []) {
 }
 
 export function computePert(tasks = []) {
-  const rows = tasks.filter((t) => finite(Number(t.optimistic)) && finite(Number(t.mostLikely)) && finite(Number(t.pessimistic))).map((t) => {
-    const optimistic = Number(t.optimistic), mostLikely = Number(t.mostLikely), pessimistic = Number(t.pessimistic);
-    const expected = (optimistic + 4 * mostLikely + pessimistic) / 6;
-    const standardDeviation = (pessimistic - optimistic) / 6;
-    return { name: t.name, optimistic, mostLikely, pessimistic, expected, standardDeviation, variance: standardDeviation ** 2 };
+  const rows = tasks.filter((t) => finite(Number(t.optimisticDays)) && finite(Number(t.mostLikelyDays)) && finite(Number(t.pessimisticDays))).map((t) => {
+    const optimisticDays = Number(t.optimisticDays), mostLikelyDays = Number(t.mostLikelyDays), pessimisticDays = Number(t.pessimisticDays);
+    const expectedDuration = (optimisticDays + 4 * mostLikelyDays + pessimisticDays) / 6;
+    const standardDeviation = (pessimisticDays - optimisticDays) / 6;
+    return { name: t.name, predecessor: t.predecessor ?? '', optimisticDays, mostLikelyDays, pessimisticDays, expectedDuration, standardDeviation, variance: standardDeviation ** 2 };
   });
-  const expected = rows.reduce((s, r) => s + r.expected, 0);
-  const variance = rows.reduce((s, r) => s + r.variance, 0);
+  const byName = new Map(rows.map((row) => [row.name, row]));
+  const visiting = new Set();
+  function schedule(row) {
+    if (row.start !== undefined || visiting.has(row.name)) return row.finish ?? row.expectedDuration;
+    visiting.add(row.name);
+    const predecessors = String(row.predecessor).split(/[,;]+/).map((name) => name.trim()).filter((name) => byName.has(name));
+    const predecessorRows = predecessors.map((name) => byName.get(name));
+    const starts = predecessorRows.map(schedule);
+    row.start = starts.length ? Math.max(...predecessorRows.map((predecessor) => predecessor.finish)) : 0;
+    row.finish = row.start + row.expectedDuration;
+    row.path = predecessorRows.length ? [...(predecessorRows.find((predecessor) => predecessor.finish === row.start)?.path ?? []), row.name] : [row.name];
+    visiting.delete(row.name);
+    return row.finish;
+  }
+  rows.forEach(schedule);
+  const criticalFinish = rows.length ? Math.max(...rows.map((row) => row.finish)) : 0;
+  const criticalPath = rows.find((row) => row.finish === criticalFinish)?.path ?? [];
+  const criticalRows = criticalPath.map((name) => byName.get(name));
+  const variance = criticalRows.reduce((s, row) => s + row.variance, 0);
   const standardDeviation = Math.sqrt(variance);
-  return { available: rows.length > 0, rows, expected, variance, standardDeviation, low95: expected - 1.96 * standardDeviation, high95: expected + 1.96 * standardDeviation };
+  return { available: rows.length > 0, rows, expectedDuration: criticalFinish, totalExpectedDuration: rows.reduce((s, r) => s + r.expectedDuration, 0), variance, standardDeviation, low95: criticalFinish - 1.96 * standardDeviation, high95: criticalFinish + 1.96 * standardDeviation, criticalPath };
 }
 
 export function describe(index) {

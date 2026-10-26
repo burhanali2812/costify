@@ -12,10 +12,11 @@ import PertSection from './components/PertSection.jsx';
 import ComparisonSection from './components/ComparisonSection.jsx';
 
 let nextId = 1;
-const newRow = (o = {}) => ({ id: nextId++, name: '', bac: '', plannedPct: '', actualPct: '', ac: '', optimistic: '', mostLikely: '', pessimistic: '', ...o });
+const newRow = (o = {}) => ({ id: nextId++, name: '', bac: '', plannedPct: '', actualPct: '', ac: '', predecessor: '', optimisticDays: '', mostLikelyDays: '', pessimisticDays: '', ...o });
 const newRisk = (o = {}) => ({ id: nextId++, name: '', probability: '', impact: '', ...o });
 const toNum = (s) => (String(s ?? '').trim() === '' ? NaN : Number(s));
 const okMoney = (n) => Number.isFinite(n) && n >= 0 && n <= 1e12;
+const okDays = (n) => Number.isFinite(n) && n >= 0 && n <= 1e6;
 const okPct = (n) => Number.isFinite(n) && n >= 0 && n <= 100;
 
 /** Turn the editable (string) rows into clean numbers; rows with bad values are reported, not silently dropped. */
@@ -24,17 +25,17 @@ function readRows(rows) {
   rows.forEach((r, i) => {
     if (['name', 'bac', 'plannedPct', 'actualPct', 'ac'].every((k) => String(r[k]).trim() === '')) return;
     const bac = toNum(r.bac), plannedPct = toNum(r.plannedPct), actualPct = toNum(r.actualPct), ac = toNum(r.ac);
-    const pert = ['optimistic', 'mostLikely', 'pessimistic'].map((k) => toNum(r[k]));
+    const pert = ['optimisticDays', 'mostLikelyDays', 'pessimisticDays'].map((k) => toNum(r[k]));
     const bad = [];
     if (!okMoney(bac)) bad.push('bac');
     if (!okPct(plannedPct)) bad.push('plannedPct');
     if (!okPct(actualPct)) bad.push('actualPct');
     if (!okMoney(ac)) bad.push('ac');
     const hasPert = pert.some(Number.isFinite);
-    if (hasPert && pert.some((n) => !okMoney(n))) bad.push('pert');
+    if (hasPert && pert.some((n) => !okDays(n))) bad.push('pert');
     if (hasPert && pert.every(Number.isFinite) && !(pert[0] <= pert[1] && pert[1] <= pert[2])) bad.push('pertOrder');
     if (bad.length) issues[r.id] = bad;
-    else tasks.push({ name: r.name.trim() || `Task ${i + 1}`, bac, plannedPct, actualPct, ac, ...(hasPert ? { optimistic: pert[0], mostLikely: pert[1], pessimistic: pert[2] } : {}) });
+    else tasks.push({ name: r.name.trim() || `Task ${i + 1}`, bac, plannedPct, actualPct, ac, predecessor: r.predecessor.trim(), ...(hasPert ? { optimisticDays: pert[0], mostLikelyDays: pert[1], pessimisticDays: pert[2] } : {}) });
   });
   return { tasks, issues };
 }
@@ -54,7 +55,7 @@ function readRisks(risks) {
 export default function App() {
   const [name, setName] = useState(SAMPLE.name);
   const [currency, setCurrency] = useState('PKR');
-  const [rows, setRows] = useState(() => SAMPLE.tasks.map(([n, bac, pp, ap, ac, optimistic, mostLikely, pessimistic]) => newRow({ name: n, bac: String(bac), plannedPct: String(pp), actualPct: String(ap), ac: String(ac), optimistic: String(optimistic), mostLikely: String(mostLikely), pessimistic: String(pessimistic) })));
+  const [rows, setRows] = useState(() => SAMPLE.tasks.map(([n, bac, pp, ap, ac, predecessor, optimisticDays, mostLikelyDays, pessimisticDays]) => newRow({ name: n, bac: String(bac), plannedPct: String(pp), actualPct: String(ap), ac: String(ac), predecessor, optimisticDays: String(optimisticDays), mostLikelyDays: String(mostLikelyDays), pessimisticDays: String(pessimisticDays) })));
   const [riskRows, setRiskRows] = useState(() => SAMPLE.risks.map(([n, p, i]) => newRisk({ name: n, probability: String(p), impact: String(i) })));
   const [mgmtEtc, setMgmtEtc] = useState('');
   const [eacBasis, setEacBasis] = useState('eacCpi');
@@ -83,7 +84,7 @@ export default function App() {
     setUpload({ state: 'loading', message: `Reading ${file.name}…` });
     try {
       const data = await uploadFile(file);
-      setRows(data.tasks.map((t) => newRow({ name: t.name, bac: String(t.bac), plannedPct: String(t.plannedPct), actualPct: String(t.actualPct), ac: String(t.ac), optimistic: t.optimistic === undefined ? '' : String(t.optimistic), mostLikely: t.mostLikely === undefined ? '' : String(t.mostLikely), pessimistic: t.pessimistic === undefined ? '' : String(t.pessimistic) })));
+      setRows(data.tasks.map((t) => newRow({ name: t.name, bac: String(t.bac), plannedPct: String(t.plannedPct), actualPct: String(t.actualPct), ac: String(t.ac), predecessor: t.predecessor ?? '', optimisticDays: t.optimisticDays === undefined ? '' : String(t.optimisticDays), mostLikelyDays: t.mostLikelyDays === undefined ? '' : String(t.mostLikelyDays), pessimisticDays: t.pessimisticDays === undefined ? '' : String(t.pessimisticDays) })));
       if (data.risks?.length) setRiskRows(data.risks.map((r) => newRisk({ name: r.name, probability: String(r.probability), impact: String(r.impact) })));
       setName(file.name.replace(/\.(xlsx|csv)$/i, ''));
       setUsingSample(false);

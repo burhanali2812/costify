@@ -26,8 +26,8 @@ function ProjectCard({ item, currency, label, onFile }) {
           <tr><th>Selected EAC</th><td className="num">{money(result.eacRevised, currency)}</td></tr>
           <tr><th>VAC</th><td className="num">{money(selected?.vac, currency)}</td></tr>
           <tr><th>Risk EMV</th><td className="num">{money(result.emv.total, currency)}</td></tr>
-          <tr><th>PERT expected</th><td className="num">{result.pert.available ? money(result.pert.expected, currency) : 'Not provided'}</td></tr>
-          <tr><th>PERT 95% range</th><td className="num">{result.pert.available ? `${money(result.pert.low95, currency)} – ${money(result.pert.high95, currency)}` : 'Not provided'}</td></tr>
+          <tr><th>PERT expected duration</th><td className="num">{result.pert.available ? `${result.pert.expectedDuration.toFixed(1)} days` : 'Not provided'}</td></tr>
+          <tr><th>PERT 95% range</th><td className="num">{result.pert.available ? `${result.pert.low95.toFixed(1)} – ${result.pert.high95.toFixed(1)} days` : 'Not provided'}</td></tr>
         </tbody></table>
       </> : <p className="empty">Choose a CSV or Excel file to add this project.</p>}
     </div>
@@ -37,7 +37,7 @@ function ProjectCard({ item, currency, label, onFile }) {
 export default function ComparisonSection({ comparison, currency, onFile }) {
   return (
     <section className="band" id="compare" aria-labelledby="h-compare">
-      <div className="band-head"><h2 id="h-compare">Compare two projects</h2><p>Upload two project files to compare their costs, performance, forecasts, risks and PERT estimates using the same formulas.</p></div>
+      <div className="band-head"><h2 id="h-compare">Compare two projects</h2><p>Upload two project files to compare their costs, performance, forecasts, risks and PERT durations using the same formulas.</p></div>
       <div className="band-body">
         <div className="compare-grid">
           <ProjectCard item={comparison[0]} currency={currency} label="Project A" onFile={(file) => onFile(0, file)} />
