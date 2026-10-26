@@ -64,8 +64,13 @@ export default function App() {
   const [aiAvailable, setAiAvailable] = useState(false);
   const [ai, setAi] = useState(null);
   const [comparison, setComparison] = useState([{ state: 'idle' }, { state: 'idle' }]);
+  const [theme, setTheme] = useState(() => localStorage.getItem('costify-theme') || 'light');
 
   useEffect(() => { getHealth().then((h) => setAiAvailable(Boolean(h.aiAvailable))).catch(() => {}); }, []);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('costify-theme', theme);
+  }, [theme]);
 
   const { tasks, issues } = useMemo(() => readRows(rows), [rows]);
   const { risks, issues: riskIssues } = useMemo(() => readRisks(riskRows), [riskRows]);
@@ -110,7 +115,12 @@ export default function App() {
       <header className="topbar">
         <div className="page topbar-in">
           <strong className="brand">EVM Cost Tracker</strong>
-          <nav aria-label="Sections"><a href="#data">Data</a><a href="#status">Status</a><a href="#forecast">Forecast</a><a href="#pert">PERT</a><a href="#charts">Charts</a><a href="#compare">Compare</a><a href="#ai">AI review</a><a href="#report">Report</a></nav>
+          <div className="topbar-tools">
+            <nav aria-label="Sections"><a href="#data">Data</a><a href="#status">Status</a><a href="#forecast">Forecast</a><a href="#pert">PERT</a><a href="#charts">Charts</a><a href="#compare">Compare</a><a href="#ai">AI review</a><a href="#report">Report</a></nav>
+            <button type="button" className="theme-toggle" onClick={() => setTheme((current) => current === 'light' ? 'dark' : 'light')} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}>
+              <span aria-hidden="true">{theme === 'light' ? '◐' : '○'}</span> {theme === 'light' ? 'Dark' : 'Light'}
+            </button>
+          </div>
         </div>
       </header>
       <main className="page">
