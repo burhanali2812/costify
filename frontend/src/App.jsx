@@ -9,6 +9,7 @@ import ChartsSection from './components/ChartsSection.jsx';
 import AiSection from './components/AiSection.jsx';
 import ReportSection from './components/ReportSection.jsx';
 import PertSection from './components/PertSection.jsx';
+import ComparisonSection from './components/ComparisonSection.jsx';
 
 let nextId = 1;
 const newRow = (o = {}) => ({ id: nextId++, name: '', bac: '', plannedPct: '', actualPct: '', ac: '', optimistic: '', mostLikely: '', pessimistic: '', ...o });
@@ -61,6 +62,7 @@ export default function App() {
   const [upload, setUpload] = useState({ state: 'idle' });
   const [aiAvailable, setAiAvailable] = useState(false);
   const [ai, setAi] = useState(null);
+  const [comparison, setComparison] = useState([{ state: 'idle' }, { state: 'idle' }]);
 
   useEffect(() => { getHealth().then((h) => setAiAvailable(Boolean(h.aiAvailable))).catch(() => {}); }, []);
 
@@ -89,12 +91,25 @@ export default function App() {
     } catch (e) { setUpload({ state: 'error', message: e.message }); }
   }
 
+  async function handleComparisonFile(index, file) {
+    if (!file) return;
+    if (!/\.(xlsx|csv)$/i.test(file.name)) return setComparison((items) => items.map((item, i) => i === index ? { state: 'error', message: 'Choose a .xlsx or .csv file.' } : item));
+    if (file.size > 2 * 1024 * 1024) return setComparison((items) => items.map((item, i) => i === index ? { state: 'error', message: 'That file is over 2 MB.' } : item));
+    setComparison((items) => items.map((item, i) => i === index ? { state: 'loading', message: `Reading ${file.name}…` } : item));
+    try {
+      const data = await uploadFile(file);
+      setComparison((items) => items.map((item, i) => i === index ? { state: 'ok', name: file.name.replace(/\.(xlsx|csv)$/i, ''), data, message: `Loaded ${data.tasks.length} task${data.tasks.length === 1 ? '' : 's'}.` } : item));
+    } catch (e) {
+      setComparison((items) => items.map((item, i) => i === index ? { state: 'error', message: e.message } : item));
+    }
+  }
+
   return (
     <>
       <header className="topbar">
         <div className="page topbar-in">
           <strong className="brand">EVM Cost Tracker</strong>
-          <nav aria-label="Sections"><a href="#data">Data</a><a href="#status">Status</a><a href="#forecast">Forecast</a><a href="#pert">PERT</a><a href="#charts">Charts</a><a href="#ai">AI review</a><a href="#report">Report</a></nav>
+          <nav aria-label="Sections"><a href="#data">Data</a><a href="#status">Status</a><a href="#forecast">Forecast</a><a href="#pert">PERT</a><a href="#charts">Charts</a><a href="#compare">Compare</a><a href="#ai">AI review</a><a href="#report">Report</a></nav>
         </div>
       </header>
       <main className="page">
@@ -117,6 +132,7 @@ export default function App() {
         ) : (
           <section className="band"><div className="band-head"><h2>Results</h2></div><div className="band-body"><p className="empty">Add at least one complete task above, or upload a file. Results, charts and the report appear here.</p></div></section>
         )}
+        <ComparisonSection comparison={comparison} currency={currency} onFile={handleComparisonFile} />
       </main>
       <footer className="page foot">Prototype for coursework. Figures are calculated with standard Earned Value Management formulas; review them before relying on them.</footer>
     </>

@@ -97,6 +97,16 @@ input[type='radio'], input[type='checkbox'] { accent-color: var(--brand); width:
 .facts h3 { font-size: 16px; font-family: var(--sans); font-weight: 600; margin-bottom: 4px; } .facts .big { font: 600 34px var(--serif); margin: 0 0 4px; } .facts p.muted { font-size: 14px; }
 @media (max-width: 900px) { .facts { grid-template-columns: 1fr; gap: 8px; } }
 
+.compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.compare-card { min-width: 0; border-top: 3px solid var(--brand); background: var(--surface); padding: 18px; }
+.compare-upload { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.compare-upload h3 { margin: 0; font-family: var(--serif); }
+.compare-upload .note { flex: 1 1 100%; margin-bottom: 0; }
+.compare-name { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; margin: 14px 0 4px; }
+.compare-table { background: transparent; }
+.compare-table th { width: 52%; font-weight: 500; }
+@media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+
 .check { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; max-width: 460px; } .check.off { color: var(--muted); }
 .ai-out { margin-top: 12px; max-width: 820px; } .ai-out h3 { margin-top: 28px; }
 .summary { font-size: 16.5px; line-height: 1.6; max-width: 70ch; }
