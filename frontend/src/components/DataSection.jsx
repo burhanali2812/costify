@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { templateUrl } from '../api.js';
 import { CURRENCIES } from '../format.js';
 
-const COLS = [['name', 'Task', 'text'], ['bac', 'Estimated cost (BAC)', 'number'], ['plannedPct', 'Planned % complete', 'number'], ['actualPct', 'Actual % complete', 'number'], ['ac', 'Actual cost (AC)', 'number']];
+const COLS = [['name', 'Task', 'text'], ['bac', 'Estimated cost (BAC)', 'number'], ['plannedPct', 'Planned % complete', 'number'], ['actualPct', 'Actual % complete', 'number'], ['ac', 'Actual cost (AC)', 'number'], ['optimistic', 'PERT optimistic', 'number'], ['mostLikely', 'PERT most likely', 'number'], ['pessimistic', 'PERT pessimistic', 'number']];
 
 export default function DataSection({ name, setName, currency, setCurrency, rows, setRows, riskRows, setRiskRows, issues, riskIssues, upload, handleFile, usingSample, newRow, newRisk, onClear }) {
   const fileRef = useRef(null);
@@ -15,7 +15,7 @@ export default function DataSection({ name, setName, currency, setCurrency, rows
     <section className="band" id="data" aria-labelledby="h-data">
       <div className="band-head">
         <h2 id="h-data">1. Your data</h2>
-        <p>Upload a spreadsheet or type the values in. Planned and actual percentages are used with the budget to work out PV and EV.</p>
+          <p>Upload a spreadsheet or type the values in. Planned and actual percentages are used with the budget to work out PV and EV. PERT estimates are optional.</p>
       </div>
       <div className="band-body">
         <div className="row-fields">
@@ -27,7 +27,7 @@ export default function DataSection({ name, setName, currency, setCurrency, rows
           onDrop={(e) => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files?.[0]); }}>
           <div>
             <strong>Upload an Excel or CSV file</strong>
-            <p>Drop it here or <button type="button" className="linkbtn" onClick={() => fileRef.current?.click()}>choose a file</button>. Accepts .xlsx and .csv up to 2 MB with the columns Task, BAC, Planned % Complete, Actual % Complete, AC. An optional sheet named Risks (Risk, Probability, Impact) fills the risk list.</p>
+            <p>Drop it here or <button type="button" className="linkbtn" onClick={() => fileRef.current?.click()}>choose a file</button>. Accepts .xlsx and .csv up to 2 MB with the columns Task, BAC, Planned % Complete, Actual % Complete, AC and optional PERT estimates. An optional sheet named Risks (Risk, Probability, Impact) fills the risk list.</p>
           </div>
           <a className="btn secondary" href={templateUrl} download>Download template</a>
           <input ref={fileRef} type="file" hidden accept=".xlsx,.csv" onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }} />
@@ -51,7 +51,7 @@ export default function DataSection({ name, setName, currency, setCurrency, rows
                   <tr key={r.id} className={issues[r.id] ? 'has-issue' : ''}>
                     {COLS.map(([k, label, type]) => (
                       <td key={k}><input aria-label={`${label}, row ${i + 1}`} type={type} inputMode={type === 'number' ? 'decimal' : undefined} min={type === 'number' ? 0 : undefined} step="any" maxLength={type === 'text' ? 120 : undefined}
-                        className={`${k === 'name' ? '' : 'num'} ${issues[r.id]?.includes(k) ? 'invalid' : ''}`} aria-invalid={issues[r.id]?.includes(k) || undefined}
+                        className={`${k === 'name' ? '' : 'num'} ${issues[r.id]?.includes(k) || (['optimistic', 'mostLikely', 'pessimistic'].includes(k) && issues[r.id]?.some((x) => ['pert', 'pertOrder'].includes(x))) ? 'invalid' : ''}`} aria-invalid={issues[r.id]?.includes(k) || undefined}
                         value={r[k]} onChange={(e) => setCell(r.id, k, e.target.value)} /></td>
                     ))}
                     <td className="num calc">{Number.isFinite(pv) ? Math.round(pv).toLocaleString('en-US') : '—'}</td>
@@ -63,7 +63,7 @@ export default function DataSection({ name, setName, currency, setCurrency, rows
             </tbody>
           </table>
         </div>
-        {badCount > 0 && <p className="note bad" role="alert">{badCount} row{badCount === 1 ? ' has' : 's have'} a value that is missing or out of range (percentages 0–100, money 0 or more). {badCount === 1 ? 'It is' : 'They are'} left out of the results until fixed.</p>}
+        {badCount > 0 && <p className="note bad" role="alert">{badCount} row{badCount === 1 ? ' has' : 's have'} a value that is missing, out of range, or has PERT estimates out of order. {badCount === 1 ? 'It is' : 'They are'} left out of the results until fixed.</p>}
         <div className="actions">
           <button type="button" className="btn secondary" disabled={rows.length >= 500} onClick={() => setRows((rs) => [...rs, newRow()])}>Add task</button>
           <button type="button" className="btn ghost" onClick={onClear}>Clear all</button>

@@ -33,6 +33,15 @@ test('TCPI and EMV', () => {
   near(r.emv.total, 3000);
 });
 
+test('PERT expected cost and uncertainty', () => {
+  const pert = computeProject({
+    tasks: [{ name: 'A', bac: 1000, plannedPct: 0, actualPct: 0, ac: 0, optimistic: 800, mostLikely: 1000, pessimistic: 1400 }],
+  }).pert;
+  near(pert.expected, 1033.3333, 0.0001);
+  near(pert.standardDeviation, 100, 0.0001);
+  near(pert.variance, 10000, 0.0001);
+});
+
 test('division by zero never produces Infinity or NaN', () => {
   const z = computeProject({ tasks: [{ name: 'Z', bac: 0, plannedPct: 0, actualPct: 0, ac: 0 }] });
   assert.equal(z.totals.spi, null); assert.equal(z.totals.cpi, null);

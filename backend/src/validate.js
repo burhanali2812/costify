@@ -23,11 +23,15 @@ export function validateProject(body) {
       const n = i + 1;
       if (!t || typeof t !== 'object') return err(`Task ${n} is not valid.`);
       const { bac, plannedPct, actualPct, ac } = t;
+      const pertValues = [t.optimistic, t.mostLikely, t.pessimistic];
+      const hasPert = pertValues.some((value) => value !== undefined && value !== null);
       if (!isNum(bac) || bac < 0 || bac > LIMITS.maxMoney) err(`Task ${n}: BAC must be a number between 0 and ${LIMITS.maxMoney}.`);
       if (!isNum(plannedPct) || plannedPct < 0 || plannedPct > 100) err(`Task ${n}: planned % must be between 0 and 100.`);
       if (!isNum(actualPct) || actualPct < 0 || actualPct > 100) err(`Task ${n}: actual % must be between 0 and 100.`);
       if (!isNum(ac) || ac < 0 || ac > LIMITS.maxMoney) err(`Task ${n}: AC must be a number between 0 and ${LIMITS.maxMoney}.`);
-      tasks.push({ name: cleanText(t.name) || `Task ${n}`, bac, plannedPct, actualPct, ac });
+      if (hasPert && pertValues.some((value) => !isNum(value) || value < 0 || value > LIMITS.maxMoney)) err(`Task ${n}: PERT estimates must be non-negative numbers between 0 and ${LIMITS.maxMoney}.`);
+      if (hasPert && pertValues.every(isNum) && !(pertValues[0] <= pertValues[1] && pertValues[1] <= pertValues[2])) err(`Task ${n}: PERT estimates must be ordered optimistic <= most likely <= pessimistic.`);
+      tasks.push({ name: cleanText(t.name) || `Task ${n}`, bac, plannedPct, actualPct, ac, ...(hasPert ? { optimistic: t.optimistic, mostLikely: t.mostLikely, pessimistic: t.pessimistic } : {}) });
     });
   }
 

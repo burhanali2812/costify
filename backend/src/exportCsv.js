@@ -18,5 +18,10 @@ export function buildCsv(project, result) {
     line('Forecast method', 'ETC', 'EAC', 'VAC'));
   for (const f of result.forecasts) out.push(line(f.label, f.etc, f.eac, f.vac));
   out.push('', line('TCPI (original budget)', result.tcpi.toOriginal), line('TCPI (revised budget)', result.tcpi.toRevised), line('EMV total', result.emv.total));
+  if (result.pert?.available) {
+    out.push('', line('PERT task', 'Optimistic', 'Most likely', 'Pessimistic', 'Expected', 'Std. deviation', 'Variance'));
+    for (const r of result.pert.rows) out.push(line(r.name, r.optimistic, r.mostLikely, r.pessimistic, r.expected, r.standardDeviation, r.variance));
+    out.push(line('PERT TOTAL', '', '', '', result.pert.expected, result.pert.standardDeviation, result.pert.variance), line('PERT 95% range', result.pert.low95, result.pert.high95));
+  }
   return out.join('\r\n') + '\r\n';
 }

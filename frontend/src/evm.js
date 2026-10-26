@@ -70,6 +70,19 @@ export function computeEmv(risks = []) {
   return { rows, total: rows.reduce((s, r) => s + r.emv, 0) };
 }
 
+export function computePert(tasks = []) {
+  const rows = tasks.filter((t) => finite(Number(t.optimistic)) && finite(Number(t.mostLikely)) && finite(Number(t.pessimistic))).map((t) => {
+    const optimistic = Number(t.optimistic), mostLikely = Number(t.mostLikely), pessimistic = Number(t.pessimistic);
+    const expected = (optimistic + 4 * mostLikely + pessimistic) / 6;
+    const standardDeviation = (pessimistic - optimistic) / 6;
+    return { name: t.name, optimistic, mostLikely, pessimistic, expected, standardDeviation, variance: standardDeviation ** 2 };
+  });
+  const expected = rows.reduce((s, r) => s + r.expected, 0);
+  const variance = rows.reduce((s, r) => s + r.variance, 0);
+  const standardDeviation = Math.sqrt(variance);
+  return { available: rows.length > 0, rows, expected, variance, standardDeviation, low95: expected - 1.96 * standardDeviation, high95: expected + 1.96 * standardDeviation };
+}
+
 export function describe(index) {
   if (!finite(index)) return 'unknown';
   if (index > 1.0005) return 'good';
@@ -95,6 +108,7 @@ export function computeProject({ tasks, risks = [], managementEtc = null, eacBas
     eacRevised: basis.eac,
     tcpi: computeTcpi(totals, basis.eac),
     emv: computeEmv(risks),
+    pert: computePert(tasks),
     status: { schedule: describe(totals.spi), cost: describe(totals.cpi) },
   };
 }

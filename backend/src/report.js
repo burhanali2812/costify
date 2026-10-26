@@ -72,11 +72,17 @@ export function buildReportPdf(project, result, analysis, aiSummary = '') {
     ...(Number.isFinite(sel?.eac) ? [{ label: 'EAC (forecast)', value: sel.eac, color: '#6B4C9A' }] : []),
   ], cur);
 
-  h2(doc, '4. Tasks');
+  if (result.pert?.available) {
+    h2(doc, '4. PERT cost analysis');
+    doc.fillColor(INK).font('Helvetica').fontSize(9).text(`Expected cost: ${cur} ${num(result.pert.expected, 0)}   |   Standard deviation: ${cur} ${num(result.pert.standardDeviation, 0)}   |   Approx. 95% range: ${cur} ${num(result.pert.low95, 0)} to ${cur} ${num(result.pert.high95, 0)}`).moveDown(0.4);
+    table(doc, [{ label: 'Task', w: 145 }, { label: 'Optimistic', w: 75, align: 'right' }, { label: 'Most likely', w: 75, align: 'right' }, { label: 'Pessimistic', w: 75, align: 'right' }, { label: 'Expected', w: 75, align: 'right' }, { label: 'Std. dev.', w: 70, align: 'right' }], result.pert.rows.map((r) => [r.name, num(r.optimistic, 0), num(r.mostLikely, 0), num(r.pessimistic, 0), num(r.expected, 0), num(r.standardDeviation, 0)]));
+  }
+
+  h2(doc, '5. Tasks');
   table(doc, [{ label: 'Task', w: 125 }, { label: 'BAC', w: 55, align: 'right' }, { label: 'PV', w: 55, align: 'right' }, { label: 'EV', w: 55, align: 'right' }, { label: 'AC', w: 55, align: 'right' }, { label: 'CV', w: 60, align: 'right' }, { label: 'CPI', w: 55, align: 'right' }, { label: 'SPI', w: 55, align: 'right' }],
     result.tasks.map((r) => [r.name, num(r.bac, 0), num(r.pv, 0), num(r.ev, 0), num(r.ac, 0), sign(r.cv), num(r.cpi), num(r.spi)]));
 
-  h2(doc, '5. AI cost analysis');
+  h2(doc, '6. AI cost analysis');
   const anomalies = analysis?.anomalies ?? detectAnomalies(result);
   doc.fillColor(INK).font('Helvetica').fontSize(9.5).text(aiSummary || analysis?.summary || '', { width: W, lineGap: 2 }).moveDown(0.6);
   if (anomalies.length) table(doc, [{ label: 'Severity', w: 55 }, { label: 'Task', w: 120 }, { label: 'Finding', w: 340 }], anomalies.slice(0, 25).map((a) => [a.severity, a.task, `${a.type}: ${a.message}`]));
