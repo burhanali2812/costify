@@ -1,0 +1,10 @@
+const finite = (n) => typeof n === 'number' && Number.isFinite(n);
+export const money = (n, cur) => (finite(n) ? `${cur} ${Math.round(n).toLocaleString('en-US')}` : '—');
+export const signedMoney = (n, cur) => (finite(n) ? `${n > 0 ? '+' : n < 0 ? '−' : ''}${cur} ${Math.abs(Math.round(n)).toLocaleString('en-US')}` : '—');
+export const index = (n) => (finite(n) ? n.toFixed(2) : '—');
+export const percent = (n, d = 1) => (finite(n) ? `${n.toFixed(d)}%` : '—');
+export const compact = (n) => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+export const toneOf = (n, goodAbove = 0) => (!finite(n) ? '' : n > goodAbove + 1e-9 ? 'good' : n < goodAbove - 1e-9 ? 'bad' : '');
+export const CURRENCIES = ['PKR', 'USD', 'EUR', 'GBP', 'AED', 'SAR', 'INR'];
+export const num = (n) => (finite(n) ? Math.round(n).toLocaleString('en-US') : '—');
+export const signedNum = (n) => (finite(n) ? `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(Math.round(n)).toLocaleString('en-US')}` : '—');

@@ -1,0 +1,26 @@
+
+> evm-cost-tracker-backend@1.0.0 test:security
+> node --test --test-reporter=spec tests/security.test.js
+
+✔ T1a: rejects executable renamed to .xlsx (wrong magic bytes) (85.583959ms)
+✔ T1b: rejects disallowed extension (.exe, .html, .svg) (54.602465ms)
+✔ T1c: rejects binary data pretending to be CSV (33.58927ms)
+✔ T1d: rejects oversized file (> 2 MB) (61.908989ms)
+✔ T1e: accepts a valid CSV and parses it (54.772591ms)
+✔ T2: rate limiting returns 429 after the limit (85.04027ms)
+✔ T3a: rejects out-of-range, wrong-type and oversized input (35.465616ms)
+✔ T3b: oversized body and invalid JSON are refused cleanly (16.622976ms)
+✔ T3c: script and prototype-pollution payloads stay inert (11.971963ms)
+✔ T4: exported CSV neutralises formulas in task names (1.191253ms)
+✔ T5a: security headers present, framework banner hidden (6.896872ms)
+✔ T5b: CORS refuses unknown origins (6.815702ms)
+✔ T5c: no stored projects, secrets or unlisted routes are reachable (12.331983ms)
+✔ T5d: AI key never reaches the client and LLM failure falls back safely (11.12276ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1217.763762
